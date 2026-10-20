@@ -174,7 +174,7 @@
       <p class="next">${next ? `До звания «${next.t.toLowerCase()}» — ${next.at - u} ${next.at - u === 1 ? 'образец' : next.at - u < 5 ? 'образца' : 'образцов'}` : 'Вся книга собрана. Как сам А. Г. Морозов.'}</p>
       <div class="ladder">${RANKS.slice(1).map(x => `<i class="${u >= x.at ? 'on' : ''}"></i>`).join('')}</div>
       <div class="stats"><div><b>${u}/${tinct.length}</b><span>образцов</span></div><button type="button" class="st-btn" id="hist"><b>${total()}</b><span>рюмок всего ›</span></button><div><b>${mon}</b><span>в ${MONTHS_IN[now.getMonth()]}</span></div></div>
-      <button class="share" type="button" id="share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13"/></svg>Сделать сторис</button>`;
+      <button class="share" type="button" id="share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13"/></svg>Похвастаться</button>`;
     $('#pages').innerHTML = cats.map(c => {
       const n = c.items.filter(t => book.items[t.n]).length;
       return `<div class="page${n === c.items.length ? ' full' : ''}"><div class="page-h"><b>${esc(c.title)}</b><span>${n} из ${c.items.length}</span></div>
@@ -228,59 +228,106 @@
     ctx.fillStyle = ctx.createPattern(tile, 'repeat'); ctx.translate(x, y); ctx.fill(); ctx.restore();
   }
   const fit = (ctx, text, max, size, weight = 800) => { let f = size; do { ctx.font = `${weight} ${f}px "Roboto Condensed", "Arial Narrow", sans-serif`; f -= 4; } while (ctx.measureText(text).width > max && f > 30); };
+  // Купеческое свидетельство для сторис. Весь контент — в безопасной зоне 270…1650 px,
+  // чтобы его не перекрывали подписи и кнопки сторис Instagram/Telegram.
+  const SAFE_TOP = 270, SAFE_BOTTOM = H - 270;
   async function drawStory(cv) {
-    try { await Promise.all([document.fonts.load('800 100px "Roboto Condensed"'), document.fonts.load('400 40px "Golos Text"')]); } catch {}
+    const OS = '"Old Standard TT", Georgia, serif', RC = '"Roboto Condensed", "Arial Narrow", sans-serif';
+    try { await Promise.all([document.fonts.load(`italic 400 100px ${OS}`), document.fonts.load(`400 40px ${OS}`), document.fonts.load(`700 40px ${OS}`), document.fonts.load(`800 40px ${RC}`), document.fonts.load('400 40px "Golos Text"')]); } catch {}
     if (!logoImg.complete) await new Promise(r => { logoImg.onload = logoImg.onerror = r; });
-    cv.width = W; cv.height = H; const ctx = cv.getContext('2d'), cream = '#f6eee4', cream2 = '#e3cfc6';
+    cv.width = W; cv.height = H; const ctx = cv.getContext('2d'), cream = '#f6eee4', cream2 = '#e3cfc6', line = 'rgba(246,238,228,.35)';
     ctx.fillStyle = '#8e2f34'; ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = 'rgba(246,238,228,.35)'; ctx.lineWidth = 3; ctx.strokeRect(48, 48, W - 96, H - 96);
+    ctx.strokeStyle = line; ctx.lineWidth = 3; ctx.strokeRect(48, 48, W - 96, H - 96); ctx.lineWidth = 1.5; ctx.strokeRect(62, 62, W - 124, H - 124);
     ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    const u = uniq(), r = rankOf(u), user = inTg && tg.initDataUnsafe && tg.initDataUnsafe.user;
-    // блоки и их высоты, чтобы всё влезло
-    const lines = [];
-    if (storyOpts.month) lines.push(`${shots(book.months[monthKey(now)] || 0)} в ${MONTHS_IN[now.getMonth()]}`);
-    if (storyOpts.year) lines.push(`${shots(yearTotal())} за ${now.getFullYear()} год`);
-    // раскладка: считаем высоты блоков и ужимаем фото, потом сетку, пока всё не влезет над подписью бара
-    const hasName = !!(user && user.first_name), lw0 = storyPhoto ? 170 : 230;
-    const lh = logoImg.naturalWidth ? lw0 * logoImg.naturalHeight / logoImg.naturalWidth : 200;
-    let pr = storyPhoto ? 250 : 0, gs = 1;
-    const gridHeight = k => storyOpts.swatches ? (4 * 112 + 3 * 22) * k + 10 + 70 + 30 : 0;
-    const need = () => lh + 50 + (storyPhoto ? 2 * pr + 70 : 0) + (hasName ? 80 : 0) + (storyOpts.rank ? 150 : 0) + gridHeight(gs) + lines.length * 76;
-    const avail = H - 120 - 250;
-    while (need() > avail && gs > .72) gs -= .02;
-    while (need() > avail && pr > 140) pr -= 10;
-    while (need() > avail && gs > .55) gs -= .02;
-    // если места много — центрируем по вертикали
-    let y = 120 + Math.max(0, (avail - need()) / 2);
-    if (logoImg.naturalWidth) ctx.drawImage(logoImg, (W - lw0) / 2, y, lw0, lh); y += lh + 50;
+    const u = uniq(), r = rankOf(u), user = inTg && tg.initDataUnsafe && tg.initDataUnsafe.user, hasName = !!(user && user.first_name);
+    const circles = [];
+    if (storyOpts.swatches) circles.push({ big: `${u}`, small: `из ${tinct.length}`, cap: 'образцов' });
+    if (storyOpts.month) circles.push({ big: `${book.months[monthKey(now)] || 0}`, small: 'рюмок', cap: MONTHS_NOM[now.getMonth()].toLowerCase() });
+    if (storyOpts.year) circles.push({ big: `${yearTotal()}`, small: 'рюмок', cap: `за ${now.getFullYear()}` });
+    const showGrid = storyOpts.swatches, split = showGrid && circles.length > 0;
+
+    // Размеры блоков. В режиме «две колонки» слева сетка 4×5, справа кружки столбиком.
+    const lw0 = storyPhoto ? 104 : 150, lh = logoImg.naturalWidth ? lw0 * logoImg.naturalHeight / logoImg.naturalWidth : 160;
+    const titleH = 92;                           // «Купеческое свидетельство» + линия + воздух
+    const cols = split ? 4 : 5, rows = Math.ceil(tinct.length / cols);
+    let pr = storyPhoto ? 240 : 0, gs = split ? .9 : 1, cs = split ? 1 : 1;
+    const gridW = k => (cols * 130 + (cols - 1) * 18) * k, gridHh = k => (rows * 98 + (rows - 1) * 18) * k;
+    const circBlockH = k => split ? circles.length * (170 * k + 58) - 10 : (circles.length ? 300 * k : 0);
+    const bodyH = () => split ? Math.max(gridHh(gs), circBlockH(cs)) + 30 : (showGrid ? gridHh(gs) + 40 : 0) + circBlockH(cs);
+    const need = () => lh + 36 + titleH + (storyPhoto ? 2 * pr + 44 + 50 : 0) + (hasName ? 64 : 0) + (storyOpts.rank ? 150 : 0) + bodyH();
+    const avail = SAFE_BOTTOM - 150 - SAFE_TOP;
+    while (need() > avail && gs > .8) { gs -= .02; cs = Math.min(1, gs + .1); }
+    while (need() > avail && pr > 170) pr -= 10;
+    while (need() > avail && gs > .6) { gs -= .02; cs = Math.min(1, gs + .1); }
+    while (need() > avail && pr > 110) pr -= 10;
+    let y = SAFE_TOP + Math.max(0, (avail - need()) / 2);
+
+    if (logoImg.naturalWidth) ctx.drawImage(logoImg, (W - lw0) / 2, y, lw0, lh); y += lh + 36;
+    // заголовок документа — Old Standard TT капителью, линия с ромбиком
+    ctx.fillStyle = cream2; ctx.font = `400 38px ${OS}`; ctx.letterSpacing = '8px';
+    ctx.fillText('КУПЕЧЕСКОЕ СВИДЕТЕЛЬСТВО', W / 2, y + 34); ctx.letterSpacing = '0px';
+    const ly = y + 62; ctx.strokeStyle = line; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(W / 2 - 230, ly); ctx.lineTo(W / 2 - 14, ly); ctx.moveTo(W / 2 + 14, ly); ctx.lineTo(W / 2 + 230, ly); ctx.stroke();
+    ctx.save(); ctx.translate(W / 2, ly); ctx.rotate(Math.PI / 4); ctx.fillStyle = cream2; ctx.fillRect(-5, -5, 10, 10); ctx.restore();
+    y += titleH;
     if (storyPhoto) {
-      const cx = W / 2, cy = y + pr;
+      const ring = 22, cx = W / 2, cy = y + 22 + ring + pr;  // кольцо не задевает линию заголовка
       ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, pr, 0, 7); ctx.clip();
       const sc = Math.max(2 * pr / storyPhoto.width, 2 * pr / storyPhoto.height);
       ctx.drawImage(storyPhoto, cx - storyPhoto.width * sc / 2, cy - storyPhoto.height * sc / 2, storyPhoto.width * sc, storyPhoto.height * sc); ctx.restore();
-      ctx.beginPath(); ctx.arc(cx, cy, pr + 8, 0, 7); ctx.strokeStyle = cream; ctx.lineWidth = 10; ctx.stroke();
-      y = cy + pr + 70;
+      ctx.beginPath(); ctx.arc(cx, cy, pr + 8, 0, 7); ctx.strokeStyle = cream; ctx.lineWidth = 8; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, pr + ring, 0, 7); ctx.strokeStyle = line; ctx.lineWidth = 2; ctx.stroke();
+      y = cy + pr + ring + 50;
     }
-    if (hasName) { ctx.fillStyle = cream2; ctx.font = '700 48px "Roboto Condensed", sans-serif'; ctx.letterSpacing = '6px'; ctx.fillText(user.first_name.toUpperCase(), W / 2, y + 40); ctx.letterSpacing = '0px'; y += 80; }
-    if (storyOpts.rank) { ctx.fillStyle = cream; fit(ctx, r.t.toUpperCase(), W - 180, 104); ctx.fillText(r.t.toUpperCase(), W / 2, y + 96); y += 150; }
-    if (storyOpts.swatches) {
-      const cols = 5, cw = 150 * gs, ch = 112 * gs, gap = 22 * gs, gx = (W - (cols * cw + (cols - 1) * gap)) / 2;
+    if (hasName) { ctx.fillStyle = cream2; ctx.font = `italic 400 42px ${OS}`; ctx.fillText(`выдано ${user.first_name}`, W / 2, y + 30); y += 64; }
+    if (storyOpts.rank) {
+      ctx.fillStyle = cream; const t = r.t; let f = 104;
+      do { ctx.font = `italic 400 ${f}px ${OS}`; f -= 4; } while (ctx.measureText(t).width > W - 200 && f > 40);
+      ctx.fillText(t, W / 2, y + 96); y += 150;
+    }
+    const drawGrid = (gx, gy, k) => {
+      const cw = 130 * k, ch = 98 * k, gap = 18 * k;
       tinct.forEach((t, i) => {
-        const x = gx + (i % cols) * (cw + gap), yy = y + 10 + Math.floor(i / cols) * (ch + gap);
+        const x = gx + (i % cols) * (cw + gap), yy = gy + Math.floor(i / cols) * (ch + gap);
         if (book.items[t.n]) drawSwatch(ctx, x, yy, cw, ch, t.n);
         else { ctx.save(); ctx.setLineDash([10, 8]); ctx.strokeStyle = 'rgba(246,238,228,.4)'; ctx.lineWidth = 3; ctx.strokeRect(x + 4, yy + 4, cw - 8, ch - 8); ctx.restore(); }
       });
-      y += 4 * ch + 3 * gap + 10 + 70;
-      ctx.fillStyle = cream; ctx.font = '700 54px "Roboto Condensed", sans-serif'; ctx.fillText(`${u} из ${tinct.length} образцов`, W / 2, y); y += 30;
+    };
+    const drawCircle = (cx, cy, d, c, capBelow) => {
+      ctx.beginPath(); ctx.arc(cx, cy, d / 2, 0, 7); ctx.strokeStyle = cream; ctx.lineWidth = 3.5; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, d / 2 - 9, 0, 7); ctx.strokeStyle = line; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = cream; let f = d * .42; do { ctx.font = `700 ${f}px ${OS}`; f -= 2; } while (ctx.measureText(c.big).width > d - 46);
+      ctx.fillText(c.big, cx, cy + d * .1);
+      ctx.fillStyle = cream2; ctx.font = `700 ${Math.round(d * .13)}px ${RC}`; ctx.letterSpacing = '2px'; ctx.fillText(c.small.toUpperCase(), cx, cy + d * .3); ctx.letterSpacing = '0px';
+      ctx.font = `italic 400 ${capBelow ? 36 : 34}px ${OS}`; ctx.fillStyle = cream2;
+      if (capBelow) ctx.fillText(c.cap, cx, cy + d / 2 + 46);
+    };
+    if (split) {
+      const gw = gridW(gs), d = 170 * cs, colGap = 56, total = gw + colGap + d + 140; // справа кружок + подпись сбоку
+      const gx = (W - total) / 2, gy = y + 10;
+      drawGrid(gx, gy, gs);
+      const cx = gx + gw + colGap + d / 2, blockH = circBlockH(cs), gh = gridHh(gs);
+      let cy = gy + Math.max(0, (gh - blockH) / 2) + d / 2;
+      circles.forEach(c => {
+        drawCircle(cx, cy, d, c, false);
+        ctx.textAlign = 'left'; ctx.fillStyle = cream2; ctx.font = `italic 400 34px ${OS}`; ctx.fillText(c.cap, cx + d / 2 + 18, cy + 12); ctx.textAlign = 'center';
+        cy += d + 58;
+      });
+      y += Math.max(gh, blockH) + 30;
+    } else {
+      if (showGrid) { const gw = gridW(gs); drawGrid((W - gw) / 2, y + 10, gs); y += gridHh(gs) + 40; }
+      if (circles.length) {
+        const d = 220 * cs, gap = 46 * cs, total = circles.length * d + (circles.length - 1) * gap; let cx = (W - total) / 2 + d / 2;
+        circles.forEach(c => { drawCircle(cx, y + d / 2 + 6, d, c, true); cx += d + gap; });
+      }
     }
-    ctx.fillStyle = cream2; ctx.font = '700 50px "Roboto Condensed", sans-serif';
-    lines.forEach(l => { y += 76; ctx.fillText(l, W / 2, y); });
-    ctx.fillStyle = cream; ctx.font = '800 42px "Roboto Condensed", sans-serif'; ctx.letterSpacing = '10px'; ctx.fillText('МАНУФАКТУРА', W / 2, H - 160); ctx.letterSpacing = '0px';
-    ctx.fillStyle = cream2; ctx.font = '400 34px "Golos Text", sans-serif'; ctx.fillText(`бар-кухня · ${B.address}`, W / 2, H - 108);
+    // подпись бара — внутри безопасной зоны
+    ctx.fillStyle = cream; ctx.font = `800 40px ${RC}`; ctx.letterSpacing = '10px'; ctx.fillText('МАНУФАКТУРА', W / 2, SAFE_BOTTOM - 76); ctx.letterSpacing = '0px';
+    ctx.fillStyle = cream2; ctx.font = `italic 400 32px ${OS}`; ctx.fillText(`бар-кухня · ${B.address}`, W / 2, SAFE_BOTTOM - 32);
   }
   function openStory() {
     const opt = (k, label) => `<label class="tgl"><input type="checkbox" data-k="${k}" ${storyOpts[k] ? 'checked' : ''}><span>${label}</span></label>`;
-    openSheet(`<h3 id="shTitle">Сторис</h3>
+    openSheet(`<h3 id="shTitle">Купеческое свидетельство</h3>
       <div class="story"><canvas id="cv" aria-label="Превью сторис"></canvas>
         <div class="story-side">
           <label class="btn ghost photo-btn">${storyPhoto ? 'Сменить фото' : 'Загрузить фото из бара'}<input type="file" accept="image/*" id="photoIn" hidden></label>
@@ -288,7 +335,7 @@
           <div class="tgls">${opt('rank', 'Звание')}${opt('swatches', 'Образцы')}${opt('month', 'Рюмки за месяц')}${opt('year', 'Рюмки за год')}</div>
         </div></div>
       <button class="btn" type="button" id="saveStory">Сохранить картинку</button>
-      <p class="hint">Сохраните и выложите в сторис Instagram или Telegram с отметкой бара.</p>`, () => {
+      <p class="hint">Сохраните и выложите в сторис с отметкой бара. Всё важное стоит в безопасной зоне — интерфейс сторис ничего не закроет.</p>`, () => {
       const cv = $('#cv'); drawStory(cv);
       sheetBody.querySelectorAll('.tgl input').forEach(i => i.onchange = () => { storyOpts[i.dataset.k] = i.checked; drawStory(cv); haptic('tap'); });
       $('#photoIn').onchange = e => { const f = e.target.files[0]; if (!f) return; const img = new Image(); img.onload = () => { storyPhoto = img; openStory(); }; img.src = URL.createObjectURL(f); };
