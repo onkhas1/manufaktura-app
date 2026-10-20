@@ -38,17 +38,39 @@
   /* ---------- Нижний лист ---------- */
   const scrim = $('#scrim'), sheet = $('#sheet'), sheetBody = $('#sheetBody');
   let onClose = null;
+  // Пока лист открыт, страница под ним заморожена (иначе в Telegram меню листается за листом).
+  let lockY = 0, sheetOpen = false;
+  const lock = () => { lockY = scrollY; Object.assign(document.body.style, { position: 'fixed', top: `-${lockY}px`, left: '0', right: '0', overflow: 'hidden' }); };
+  const unlock = () => { Object.assign(document.body.style, { position: '', top: '', left: '', right: '', overflow: '' }); scrollTo(0, lockY); };
   const openSheet = (html, after) => {
-    sheetBody.innerHTML = html; scrim.classList.add('on'); sheet.classList.add('on');
-    if (inTg) { tg.BackButton.show(); }
+    sheetBody.innerHTML = html; sheet.style.transform = ''; sheet.scrollTop = 0;
+    if (!sheetOpen) lock();
+    sheetOpen = true; scrim.classList.add('on'); sheet.classList.add('on');
+    if (inTg) { tg.BackButton.show(); try { tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch {} }
     after && after();
   };
   const closeSheet = () => {
-    scrim.classList.remove('on'); sheet.classList.remove('on');
-    if (inTg) tg.BackButton.hide();
+    if (!sheetOpen) return;
+    sheetOpen = false; scrim.classList.remove('on'); sheet.classList.remove('on'); sheet.style.transform = '';
+    unlock();
+    if (inTg) { tg.BackButton.hide(); try { tg.enableVerticalSwipes && tg.enableVerticalSwipes(); } catch {} }
     onClose && onClose(); onClose = null;
   };
   scrim.onclick = closeSheet;
+  scrim.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+  // Смахнуть лист вниз: тянем, если содержимое листа прокручено к началу.
+  let y0 = null, dy = 0, t0 = 0;
+  sheet.addEventListener('touchstart', e => { if (sheet.scrollTop > 0) { y0 = null; return; } y0 = e.touches[0].clientY; dy = 0; t0 = Date.now(); sheet.style.transition = 'none'; }, { passive: true });
+  sheet.addEventListener('touchmove', e => {
+    if (y0 === null) return; dy = e.touches[0].clientY - y0;
+    if (dy > 0) { e.preventDefault(); sheet.style.transform = `translateY(${dy}px)`; scrim.style.opacity = String(Math.max(0, 1 - dy / 400)); }
+  }, { passive: false });
+  sheet.addEventListener('touchend', () => {
+    if (y0 === null) return; sheet.style.transition = ''; scrim.style.opacity = '';
+    const fast = dy > 40 && Date.now() - t0 < 250;
+    if (dy > 110 || fast) closeSheet(); else sheet.style.transform = '';
+    y0 = null; dy = 0;
+  });
   if (inTg) tg.BackButton.onClick(closeSheet);
   addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
 
