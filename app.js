@@ -173,8 +173,8 @@
     $('#rank').innerHTML = `<p class="lbl">Ваше звание</p><p class="title">${r.t}</p>
       <p class="next">${next ? `До звания «${next.t.toLowerCase()}» — ${next.at - u} ${next.at - u === 1 ? 'образец' : next.at - u < 5 ? 'образца' : 'образцов'}` : 'Вся книга собрана. Как сам А. Г. Морозов.'}</p>
       <div class="ladder">${RANKS.slice(1).map(x => `<i class="${u >= x.at ? 'on' : ''}"></i>`).join('')}</div>
-      <div class="stats"><div><b>${u}/${tinct.length}</b><span>образцов</span></div><div><b>${total()}</b><span>рюмок всего</span></div><div><b>${mon}</b><span>в ${MONTHS_IN[now.getMonth()]}</span></div></div>
-      <button class="share" type="button" id="share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13"/></svg>Похвастаться друзьям</button>`;
+      <div class="stats"><div><b>${u}/${tinct.length}</b><span>образцов</span></div><button type="button" class="st-btn" id="hist"><b>${total()}</b><span>рюмок всего ›</span></button><div><b>${mon}</b><span>в ${MONTHS_IN[now.getMonth()]}</span></div></div>
+      <button class="share" type="button" id="share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13"/></svg>Сделать сторис</button>`;
     $('#pages').innerHTML = cats.map(c => {
       const n = c.items.filter(t => book.items[t.n]).length;
       return `<div class="page${n === c.items.length ? ' full' : ''}"><div class="page-h"><b>${esc(c.title)}</b><span>${n} из ${c.items.length}</span></div>
@@ -184,12 +184,127 @@
             <span class="n">${esc(t.n)}</span>${it ? `<span class="cnt">${shots(it.n)}</span>` : ''}</button>`; }).join('')}</div></div>`;
     }).join('');
     justSewn = null;
-    $('#share').onclick = () => {
-      const text = `Я ${r.t.toLowerCase()} в «Мануфактуре»: ${u} из ${tinct.length} образцов, ${shots(total())}. А ты?`;
-      const url = `https://t.me/share/url?url=${encodeURIComponent(B.appLink || B.telegram)}&text=${encodeURIComponent(text)}`;
-      haptic('tap'); if (inTg) tg.openTelegramLink(url); else window.open(url, '_blank', 'noopener');
-    };
+    $('#share').onclick = () => { haptic('tap'); openStory(); };
+    $('#hist').onclick = () => { haptic('tap'); openHistory(); };
   }
+
+  /* ---------- Рюмки по месяцам ---------- */
+  const MONTHS_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const yearTotal = () => Object.entries(book.months).filter(([k]) => k.startsWith(String(now.getFullYear()))).reduce((a, [, v]) => a + v, 0);
+  function openHistory() {
+    const rows = [2, 1, 0].map(k => { const d = new Date(now.getFullYear(), now.getMonth() - k, 1); return { name: MONTHS_NOM[d.getMonth()], n: book.months[monthKey(d)] || 0 }; });
+    const max = Math.max(1, ...rows.map(r => r.n));
+    openSheet(`<h3 id="shTitle">Рюмки по месяцам</h3>
+      <ul class="hist">${rows.map(r => `<li><span>${r.name}</span><i style="--w:${Math.round(r.n / max * 100)}%"></i><b>${r.n}</b></li>`).join('')}</ul>
+      <p class="hint">За ${now.getFullYear()} год: ${shots(yearTotal())}. Всего: ${shots(total())}.</p>`);
+  }
+
+  /* ---------- Сторис ---------- */
+  const W = 1080, H = 1920;
+  let storyPhoto = null;
+  const storyOpts = { rank: true, swatches: true, month: true, year: false };
+  const logoImg = new Image(); logoImg.src = 'img/logo-round.png';
+  // Узор ткани на холсте (те же 6 переплетений, что и в книге).
+  function drawSwatch(ctx, x, y, w, h, name) {
+    const i = tinct.findIndex(t => t.n === name), c = COLORS[name], dark = lum(c) < .45;
+    const ink = dark ? mix(c, 255, .38) : mix(c, 0, .28), soft = dark ? mix(c, 255, .18) : mix(c, 0, .12);
+    const k = Math.max(1, w / 120), tile = document.createElement('canvas'), sz = [12, 16, 14, 12, 8, 6][i % 6] * k;
+    tile.width = tile.height = Math.ceil(sz); const t = tile.getContext('2d');
+    t.fillStyle = c; t.fillRect(0, 0, sz, sz); t.fillStyle = ink; t.strokeStyle = ink;
+    switch (i % 6) {
+      case 0: t.globalAlpha = .55; t.fillRect(0, 0, 4 * k, sz); t.globalAlpha = .4; t.fillRect(7 * k, 0, 1.5 * k, sz); break;
+      case 1: t.globalAlpha = .3; t.fillRect(0, 0, sz / 2, sz); t.fillRect(0, 0, sz, sz / 2); break;
+      case 2: t.globalAlpha = .7; [[3.5, 3.5], [10.5, 10.5]].forEach(([a, b]) => { t.beginPath(); t.arc(a * k, b * k, 2.2 * k, 0, 7); t.fill(); }); break;
+      case 3: t.globalAlpha = .55; t.lineWidth = 1.6 * k; t.beginPath(); t.moveTo(0, sz); t.lineTo(sz / 2, 0); t.lineTo(sz, sz); t.stroke(); break;
+      case 4: t.globalAlpha = .35; t.beginPath(); t.moveTo(0, 0); t.lineTo(sz * .4, 0); t.lineTo(sz, sz * .6); t.lineTo(sz, sz); t.lineTo(sz * .6, sz); t.lineTo(0, sz * .4); t.closePath(); t.fill(); break;
+      case 5: t.fillStyle = soft; t.fillRect(0, 0, sz / 2, sz / 2); t.fillRect(sz / 2, sz / 2, sz / 2, sz / 2); break;
+    }
+    const tooth = 4 * k, step = 6 * k; ctx.save(); ctx.beginPath();
+    let n = 0; for (let px = 0; px <= w; px += step, n++) ctx.lineTo(x + px, y + (n % 2 ? tooth : 0));
+    n = 1; for (let py = step; py <= h; py += step, n++) ctx.lineTo(x + w - (n % 2 ? tooth : 0), y + py);
+    n = 1; for (let px = w - step; px >= 0; px -= step, n++) ctx.lineTo(x + px, y + h - (n % 2 ? tooth : 0));
+    n = 1; for (let py = h - step; py > 0; py -= step, n++) ctx.lineTo(x + (n % 2 ? tooth : 0), y + py);
+    ctx.closePath(); ctx.shadowColor = 'rgba(30,8,10,.35)'; ctx.shadowOffsetY = 4 * k; ctx.shadowBlur = 8 * k;
+    ctx.fillStyle = ctx.createPattern(tile, 'repeat'); ctx.translate(x, y); ctx.fill(); ctx.restore();
+  }
+  const fit = (ctx, text, max, size, weight = 800) => { let f = size; do { ctx.font = `${weight} ${f}px "Roboto Condensed", "Arial Narrow", sans-serif`; f -= 4; } while (ctx.measureText(text).width > max && f > 30); };
+  async function drawStory(cv) {
+    try { await Promise.all([document.fonts.load('800 100px "Roboto Condensed"'), document.fonts.load('400 40px "Golos Text"')]); } catch {}
+    if (!logoImg.complete) await new Promise(r => { logoImg.onload = logoImg.onerror = r; });
+    cv.width = W; cv.height = H; const ctx = cv.getContext('2d'), cream = '#f6eee4', cream2 = '#e3cfc6';
+    ctx.fillStyle = '#8e2f34'; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(246,238,228,.35)'; ctx.lineWidth = 3; ctx.strokeRect(48, 48, W - 96, H - 96);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    const u = uniq(), r = rankOf(u), user = inTg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+    // блоки и их высоты, чтобы всё влезло
+    const lines = [];
+    if (storyOpts.month) lines.push(`${shots(book.months[monthKey(now)] || 0)} в ${MONTHS_IN[now.getMonth()]}`);
+    if (storyOpts.year) lines.push(`${shots(yearTotal())} за ${now.getFullYear()} год`);
+    // раскладка: считаем высоты блоков и ужимаем фото, потом сетку, пока всё не влезет над подписью бара
+    const hasName = !!(user && user.first_name), lw0 = storyPhoto ? 170 : 230;
+    const lh = logoImg.naturalWidth ? lw0 * logoImg.naturalHeight / logoImg.naturalWidth : 200;
+    let pr = storyPhoto ? 250 : 0, gs = 1;
+    const gridHeight = k => storyOpts.swatches ? (4 * 112 + 3 * 22) * k + 10 + 70 + 30 : 0;
+    const need = () => lh + 50 + (storyPhoto ? 2 * pr + 70 : 0) + (hasName ? 80 : 0) + (storyOpts.rank ? 150 : 0) + gridHeight(gs) + lines.length * 76;
+    const avail = H - 120 - 250;
+    while (need() > avail && gs > .72) gs -= .02;
+    while (need() > avail && pr > 140) pr -= 10;
+    while (need() > avail && gs > .55) gs -= .02;
+    // если места много — центрируем по вертикали
+    let y = 120 + Math.max(0, (avail - need()) / 2);
+    if (logoImg.naturalWidth) ctx.drawImage(logoImg, (W - lw0) / 2, y, lw0, lh); y += lh + 50;
+    if (storyPhoto) {
+      const cx = W / 2, cy = y + pr;
+      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, pr, 0, 7); ctx.clip();
+      const sc = Math.max(2 * pr / storyPhoto.width, 2 * pr / storyPhoto.height);
+      ctx.drawImage(storyPhoto, cx - storyPhoto.width * sc / 2, cy - storyPhoto.height * sc / 2, storyPhoto.width * sc, storyPhoto.height * sc); ctx.restore();
+      ctx.beginPath(); ctx.arc(cx, cy, pr + 8, 0, 7); ctx.strokeStyle = cream; ctx.lineWidth = 10; ctx.stroke();
+      y = cy + pr + 70;
+    }
+    if (hasName) { ctx.fillStyle = cream2; ctx.font = '700 48px "Roboto Condensed", sans-serif'; ctx.letterSpacing = '6px'; ctx.fillText(user.first_name.toUpperCase(), W / 2, y + 40); ctx.letterSpacing = '0px'; y += 80; }
+    if (storyOpts.rank) { ctx.fillStyle = cream; fit(ctx, r.t.toUpperCase(), W - 180, 104); ctx.fillText(r.t.toUpperCase(), W / 2, y + 96); y += 150; }
+    if (storyOpts.swatches) {
+      const cols = 5, cw = 150 * gs, ch = 112 * gs, gap = 22 * gs, gx = (W - (cols * cw + (cols - 1) * gap)) / 2;
+      tinct.forEach((t, i) => {
+        const x = gx + (i % cols) * (cw + gap), yy = y + 10 + Math.floor(i / cols) * (ch + gap);
+        if (book.items[t.n]) drawSwatch(ctx, x, yy, cw, ch, t.n);
+        else { ctx.save(); ctx.setLineDash([10, 8]); ctx.strokeStyle = 'rgba(246,238,228,.4)'; ctx.lineWidth = 3; ctx.strokeRect(x + 4, yy + 4, cw - 8, ch - 8); ctx.restore(); }
+      });
+      y += 4 * ch + 3 * gap + 10 + 70;
+      ctx.fillStyle = cream; ctx.font = '700 54px "Roboto Condensed", sans-serif'; ctx.fillText(`${u} из ${tinct.length} образцов`, W / 2, y); y += 30;
+    }
+    ctx.fillStyle = cream2; ctx.font = '700 50px "Roboto Condensed", sans-serif';
+    lines.forEach(l => { y += 76; ctx.fillText(l, W / 2, y); });
+    ctx.fillStyle = cream; ctx.font = '800 42px "Roboto Condensed", sans-serif'; ctx.letterSpacing = '10px'; ctx.fillText('МАНУФАКТУРА', W / 2, H - 160); ctx.letterSpacing = '0px';
+    ctx.fillStyle = cream2; ctx.font = '400 34px "Golos Text", sans-serif'; ctx.fillText(`бар-кухня · ${B.address}`, W / 2, H - 108);
+  }
+  function openStory() {
+    const opt = (k, label) => `<label class="tgl"><input type="checkbox" data-k="${k}" ${storyOpts[k] ? 'checked' : ''}><span>${label}</span></label>`;
+    openSheet(`<h3 id="shTitle">Сторис</h3>
+      <div class="story"><canvas id="cv" aria-label="Превью сторис"></canvas>
+        <div class="story-side">
+          <label class="btn ghost photo-btn">${storyPhoto ? 'Сменить фото' : 'Загрузить фото из бара'}<input type="file" accept="image/*" id="photoIn" hidden></label>
+          ${storyPhoto ? '<button class="link" type="button" id="noPhoto">Убрать фото</button>' : ''}
+          <div class="tgls">${opt('rank', 'Звание')}${opt('swatches', 'Образцы')}${opt('month', 'Рюмки за месяц')}${opt('year', 'Рюмки за год')}</div>
+        </div></div>
+      <button class="btn" type="button" id="saveStory">Сохранить картинку</button>
+      <p class="hint">Сохраните и выложите в сторис Instagram или Telegram с отметкой бара.</p>`, () => {
+      const cv = $('#cv'); drawStory(cv);
+      sheetBody.querySelectorAll('.tgl input').forEach(i => i.onchange = () => { storyOpts[i.dataset.k] = i.checked; drawStory(cv); haptic('tap'); });
+      $('#photoIn').onchange = e => { const f = e.target.files[0]; if (!f) return; const img = new Image(); img.onload = () => { storyPhoto = img; openStory(); }; img.src = URL.createObjectURL(f); };
+      const np = $('#noPhoto'); if (np) np.onclick = () => { storyPhoto = null; openStory(); };
+      $('#saveStory').onclick = async () => {
+        const url = cv.toDataURL('image/png'); haptic('success');
+        // На телефоне: системное «Поделиться» с файлом, если есть; иначе картинка на весь экран — долгое нажатие → сохранить.
+        try {
+          const blob = await (await fetch(url)).blob(), file = new File([blob], 'manufaktura-story.png', { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
+        } catch (err) { if (err && err.name === 'AbortError') return; }
+        const v = $('#viewer'); v.querySelector('img').src = url; v.querySelector('a').href = url; v.hidden = false;
+      };
+    });
+  }
+  $('#viewer').onclick = e => { if (e.target.closest('a')) return; $('#viewer').hidden = true; };
   $('#wedRule').textContent = isWed ? `Сегодня среда: все настойки по ${T.wednesday} ₽.` : `По средам все настойки по ${T.wednesday} ₽ вместо ${T.price}.`;
   $('#demoCode').textContent = `Демо: код дня для бармена ${dayCode(now)}. В рабочей версии бармен получает его в боте.`;
   $('#pages').onclick = e => {
