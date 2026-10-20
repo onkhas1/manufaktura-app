@@ -90,45 +90,51 @@ button.it{cursor:pointer}
 .plain li{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font:600 13.5px/1.25 var(--cond);letter-spacing:.02em;text-transform:uppercase;color:var(--ink)}
 .plain li b{font-weight:700;color:var(--bord-ink)}
 
-/* ---------- Бинго ---------- */
-.bingo-head{background:var(--bord);color:var(--on-bord);padding:0 18px 22px}
-.bingo-head h2{font:800 34px/1 var(--cond);letter-spacing:.02em;text-transform:uppercase}
-.bingo-head p{color:var(--on-bord-2);font-size:14px;margin-top:8px;max-width:36ch}
-.progress{display:flex;align-items:center;gap:12px;margin-top:16px}
-.bar-track{flex:1;height:8px;border-radius:99px;background:rgba(246,238,228,.22);overflow:hidden}
-.bar-fill{height:100%;background:var(--on-bord);border-radius:99px;transition:width .6s var(--ease)}
-.progress b{font:800 18px/1 var(--cond);white-space:nowrap}
-.card{margin:-1px 0 0;background:var(--bord);padding:0 12px 14px}
-.grid{background:var(--paper);border-radius:14px;padding:6px 8px 8px}
-.cat{padding:8px 2px 4px}
-.cat + .cat{border-top:1px dashed var(--line-2);margin-top:6px}
-.cat-h{display:flex;justify-content:space-between;align-items:baseline;padding:2px 2px 8px}
-.cat-h b{font:800 15px/1 var(--cond);letter-spacing:.08em;text-transform:uppercase;color:var(--bord-ink)}
-.cat-h span{font:700 12.5px/1 var(--cond);letter-spacing:.06em;color:var(--ink-2)}
-.cat.full .cat-h span{color:var(--bord-ink)}
-.cells{display:grid;gap:6px}
-.cat.full .cell{border-color:var(--bord)}
-.cell{position:relative;min-height:88px;display:flex;flex-direction:column;justify-content:space-between;padding:8px 7px;border-radius:10px;border:1.5px solid var(--line);background:var(--cream);cursor:pointer;text-align:left;overflow:hidden}
-.cell .no{font:700 11px/1 var(--cond);letter-spacing:.06em;color:var(--ink-2)}
-.cell .dot{position:absolute;top:8px;right:8px;width:10px;height:10px;border-radius:50%}
-.cell .cn{font:700 12.5px/1.12 var(--cond);letter-spacing:.01em;text-transform:uppercase;color:var(--bord-ink);hyphens:auto;overflow-wrap:anywhere}
-.cell.free{background:var(--bord);border-color:var(--bord)}
-.cell.free .cn,.cell.free .no{color:var(--on-bord)}
-.cell .stamp{position:absolute;inset:0 0 38% 0;display:grid;place-items:center;pointer-events:none;opacity:0;transform:scale(1.4) rotate(-14deg);transition:opacity .25s,transform .35s var(--ease)}
-.cell .stamp i{display:grid;place-items:center;height:84%;aspect-ratio:1;border:2.5px solid var(--bord);border-radius:50%;background:rgba(251,248,243,.82);font:800 11px/1.05 var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--bord);text-align:center;font-style:normal}
-.cell.done .stamp{opacity:1;transform:scale(1) rotate(-14deg)}
-.cell.done .dot,.cell.done .no{opacity:0}
-.cell.free.done .stamp i{background:rgba(142,47,52,.85);border-color:var(--on-bord);color:var(--on-bord)}
-.cell.win{box-shadow:inset 0 0 0 2px var(--bord)}
+/* ---------- Книга образцов ---------- */
+.book-head{background:var(--bord);color:var(--on-bord);padding:2px 18px 20px}
+.book-head .kick{font-size:14px;color:var(--on-bord-2);margin-top:6px}
+.book-head h2{font:800 34px/1 var(--cond);letter-spacing:.02em;text-transform:uppercase}
+.rank{margin-top:16px;padding:14px 16px;border-radius:14px;background:rgba(246,238,228,.1);border:1.5px solid rgba(246,238,228,.28)}
+.rank .lbl{font:700 12px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--on-bord-2)}
+.rank .title{font:800 26px/1.05 var(--cond);letter-spacing:.02em;text-transform:uppercase;margin-top:6px}
+.rank .next{font-size:13.5px;color:var(--on-bord-2);margin-top:4px}
+.ladder{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:12px}
+.ladder i{height:6px;border-radius:99px;background:rgba(246,238,228,.22)}
+.ladder i.on{background:var(--on-bord)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.stats div{text-align:left}
+.stats b{display:block;font:800 24px/1 var(--cond)}
+.stats span{font-size:12px;color:var(--on-bord-2)}
+.share{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;margin-top:14px;border-radius:12px;border:1.5px solid rgba(246,238,228,.55);background:transparent;color:var(--on-bord);font:700 14px/1 var(--cond);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.share svg{width:18px;height:18px}
+.pages{padding:6px 18px 0}
+.page{padding:20px 0 6px;border-bottom:1px dashed var(--line-2)}
+.page-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.page-h b{font:800 18px/1 var(--cond);letter-spacing:.08em;text-transform:uppercase;color:var(--bord-ink)}
+.page-h span{font:700 13px/1 var(--cond);letter-spacing:.06em;color:var(--ink-2)}
+.page.full .page-h span{color:var(--bord-ink)}
+.sw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px}
+.sw{display:flex;flex-direction:column;gap:6px;padding:0;border:0;background:none;text-align:left;cursor:pointer;color:inherit}
+.sw .slot{position:relative;aspect-ratio:4/3;border-radius:6px;border:1.5px dashed var(--line-2);background:var(--paper);display:grid;place-items:center}
+.sw .slot em{font:700 13px/1 var(--cond);letter-spacing:.08em;color:#b9a994;font-style:normal}
+.sw.has .slot{border:0;background:none;filter:drop-shadow(0 2px 3px rgba(60,30,20,.18))}
+.sw .slot svg{position:absolute;inset:0;width:100%;height:100%}
+.sw .n{font:700 13px/1.15 var(--cond);letter-spacing:.02em;text-transform:uppercase;color:var(--bord-ink);overflow-wrap:anywhere}
+.sw .cnt{font-size:12px;color:var(--ink-2)}
+.sw.new .slot{animation:sewn .7s var(--ease)}
+@keyframes sewn{from{transform:scale(.6) rotate(-8deg);opacity:0}}
 .rules{padding:20px 18px 0}
 .rules h3{font:800 17px/1 var(--cond);letter-spacing:.08em;text-transform:uppercase;color:var(--bord-ink);margin-bottom:10px}
 .rules li{list-style:none;display:grid;grid-template-columns:28px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}
 .rules li b{font:800 18px/1.2 var(--cond);color:var(--bord-ink)}
 .rules .demo{margin-top:12px;font-size:13px;color:var(--ink-2)}
-.wins{margin:16px 18px 0;padding:14px 16px;border-radius:14px;background:var(--paper);border:1.5px solid var(--bord)}
-.wins h3{font:800 16px/1 var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--bord-ink)}
-.wins p{font-size:14px;color:var(--ink-2);margin-top:6px}
-
+.sheet .sw-big{width:100%;aspect-ratio:16/9;margin-bottom:14px;filter:drop-shadow(0 3px 5px rgba(60,30,20,.2))}
+.sheet .sw-big svg{width:100%;height:100%}
+.history{margin:18px 18px 0;padding:16px;border-radius:14px;background:var(--paper);border:1.5px solid var(--line-2)}
+.history h3{font:800 17px/1.1 var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--bord-ink)}
+.history p{font-size:14.5px;margin-top:8px}
+.history .src{font-size:12.5px;color:var(--ink-2)}
+.history .src a{color:var(--ink-2)}
 /* ---------- Нижний лист ---------- */
 .scrim{position:fixed;inset:0;z-index:50;background:rgba(43,36,32,.45);opacity:0;pointer-events:none;transition:opacity .25s}
 .scrim.on{opacity:1;pointer-events:auto}
@@ -228,21 +234,20 @@ textarea.inp{min-height:76px;resize:none}
     <div id="menuBody"></div>
   </section>
 
-  <!-- Бинго -->
-  <section class="screen" id="s-bingo" aria-label="Настоечное бинго">
-    <div class="bingo-head">
-      <h2>Настоечное бинго</h2>
-      <p>Девятнадцать наших настоек в четырёх группах. Пробуйте, бармен ставит отметку. Закрыли группу — подарок.</p>
-      <div class="progress"><div class="bar-track"><div class="bar-fill" id="pFill"></div></div><b id="pText"></b></div>
+  <!-- Книга образцов -->
+  <section class="screen" id="s-bingo" aria-label="Книга образцов">
+    <div class="book-head">
+      <h2>Книга образцов</h2>
+      <p class="kick">Лавка «Мануфактурные товары», 1873</p>
+      <div class="rank" id="rank"></div>
     </div>
-    <div class="card"><div class="grid" id="grid"></div></div>
-    <div class="wins" id="wins" hidden></div>
+    <div class="pages" id="pages"></div>
     <div class="rules">
-      <h3>Как играть</h3>
+      <h3>Как это работает</h3>
       <ul>
-        <li><b>1</b><span>Закажите настойку и попросите бармена отметить её в карточке. Он введёт код дня.</span></li>
-        <li><b>2</b><span>Закрыли группу (например, все кислые) — шот настойки в подарок.</span></li>
-        <li><b>3</b><span>Закрыли всю карточку — приз от бара и ваше имя на доске Мануфактуры.</span></li>
+        <li><b>1</b><span>Здесь, в доме купца А. Г. Морозова, когда-то продавали мануфактуру — ткани. Теперь у каждой нашей настойки свой образец.</span></li>
+        <li><b>2</b><span>Заказали настойку — бармен вводит код дня, и образец вшивается в вашу книгу. Повторная рюмка тоже считается.</span></li>
+        <li><b>3</b><span>Звание растёт с числом разных образцов: 5 — купец 3-й гильдии, 12 — 2-й, все 19 — 1-й гильдии, как сам Морозов.</span></li>
         <li><b>₽</b><span id="wedRule"></span></li>
       </ul>
       <p class="demo" id="demoCode"></p>
@@ -275,6 +280,7 @@ textarea.inp{min-height:76px;resize:none}
   <!-- О баре -->
   <section class="screen" id="s-about" aria-label="О баре">
     <div class="about-top"><img src="img/facade.png" alt="Рисунок фасада: дом купца Морозова"><p id="motto"></p></div>
+    <div class="history" id="history"></div>
     <div id="aboutActs"></div>
     <dl class="info" id="info"></dl>
     <div class="pad"><a class="btn ghost" id="tgLink" target="_blank" rel="noopener">Канал в Telegram</a></div>
@@ -283,7 +289,7 @@ textarea.inp{min-height:76px;resize:none}
 
 <nav class="tabbar" aria-label="Разделы"><div class="in" role="tablist">
   <button class="tab" role="tab" aria-selected="true" data-s="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4Z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>Меню</button>
-  <button class="tab" role="tab" aria-selected="false" data-s="bingo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M4 15h16M10 4v16M15 4v16"/></svg>Бинго</button>
+  <button class="tab" role="tab" aria-selected="false" data-s="bingo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5 4.5h11.5A2.5 2.5 0 0 1 19 7v12.5H7.5A2.5 2.5 0 0 1 5 17V4.5Z"/><path d="M5 17a2.5 2.5 0 0 1 2.5-2.5H19"/><path d="M9 8h6M9 11h4" stroke-dasharray="2 1.6"/></svg>Книга</button>
   <button class="tab" role="tab" aria-selected="false" data-s="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16M9 15l2 2 4-4"/></svg>Бронь</button>
   <button class="tab" role="tab" aria-selected="false" data-s="about"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.3"/></svg>О баре</button>
 </div></nav>

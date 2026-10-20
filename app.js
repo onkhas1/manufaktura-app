@@ -108,18 +108,54 @@
   };
   renderMenu();
 
-  /* ---------- Бинго ---------- */
+  const toast = msg => { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); };
+
+  /* ---------- Книга образцов ---------- */
+  // Дом 36 в 1873 году — лавка «Мануфактурные товары» купца А. Г. Морозова. Каждая настойка — образец ткани.
   const COLORS = { 'Бузина-цитрус':'#e8d37a','Гранат-персик':'#d4515a','Алоэ-киви':'#9cc06a','Яблоко-щавель':'#b9cd73','Фейхоа-лайм':'#86ad61','Вишня':'#7c1a2a','Хреновуха':'#e6dcb8','Томатная':'#d4472f','Лимончелло':'#f0cc45','Облепиха':'#ee8a24','Клюковка':'#b51f3a','Персик-личи-конопля':'#f1b083','Клубника-гречка':'#c64a58','Банан-куркума':'#efc244','Малина-пломбир':'#eda0b2','Кассис':'#4b1a3a','Порно шот':'#f2b45a','Джин на малине':'#d4567a','Черноплодный негрони':'#3b1422' };
   const tinct = []; T.groups.forEach(g => g.items.forEach(([n, d]) => tinct.push({ n, d, g: g.title })));
   const cats = T.groups.map(g => ({ title: g.title, items: tinct.filter(t => t.g === g.title) }));
+  const RANKS = [ { at: 0, t: 'Покупатель' }, { at: 5, t: 'Купец 3-й гильдии' }, { at: 12, t: 'Купец 2-й гильдии' }, { at: 19, t: 'Купец 1-й гильдии' } ];
+  const WEAVES = ['ситец в полоску', 'клетка', 'горох', 'ёлочка', 'саржа', 'рогожка'];
+
+  // Цвет нитей узора: темнее на светлой ткани, светлее на тёмной.
+  const hex = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
+  const mix = (c, w, k) => '#' + hex(c).map(v => Math.round(v + (w - v) * k).toString(16).padStart(2, '0')).join('');
+  const lum = c => { const [r, g, b] = hex(c); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
+  let swId = 0;
+  // Образец ткани: SVG-узор + край «зигзагом», как после портновских ножниц.
+  const swatchSVG = (name, w = 120, h = 90) => {
+    const i = tinct.findIndex(t => t.n === name), c = COLORS[name], dark = lum(c) < .45;
+    const ink = dark ? mix(c, 255, .38) : mix(c, 0, .28), soft = dark ? mix(c, 255, .18) : mix(c, 0, .12), id = 'sw' + (++swId);
+    const kind = i % 6;
+    const pat = [
+      `<pattern id="${id}" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="${c}"/><rect width="4" height="12" fill="${ink}" opacity=".55"/><rect x="7" width="1.5" height="12" fill="${ink}" opacity=".4"/></pattern>`,
+      `<pattern id="${id}" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="16" height="16" fill="${c}"/><rect width="8" height="16" fill="${ink}" opacity=".3"/><rect width="16" height="8" fill="${ink}" opacity=".3"/></pattern>`,
+      `<pattern id="${id}" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="${c}"/><circle cx="3.5" cy="3.5" r="2.2" fill="${ink}" opacity=".7"/><circle cx="10.5" cy="10.5" r="2.2" fill="${ink}" opacity=".7"/></pattern>`,
+      `<pattern id="${id}" width="12" height="10" patternUnits="userSpaceOnUse"><rect width="12" height="10" fill="${c}"/><path d="M0 10 6 0M6 0l6 10" stroke="${ink}" stroke-width="1.6" opacity=".55" fill="none"/></pattern>`,
+      `<pattern id="${id}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="${c}"/><rect width="3" height="8" fill="${ink}" opacity=".35"/></pattern>`,
+      `<pattern id="${id}" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="${c}"/><rect width="3" height="3" fill="${soft}"/><rect x="3" y="3" width="3" height="3" fill="${soft}"/></pattern>`
+    ][kind];
+    // зигзаг по периметру
+    const t = 4, step = 6, pts = [];
+    for (let x = 0; x <= w; x += step) pts.push([x, (x / step) % 2 ? t : 0]);
+    for (let y = step; y <= h; y += step) pts.push([w - ((y / step) % 2 ? t : 0), y]);
+    for (let x = w - step; x >= 0; x -= step) pts.push([x, h - ((x / step) % 2 ? t : 0)]);
+    for (let y = h - step; y > 0; y -= step) pts.push([(y / step) % 2 ? t : 0, y]);
+    return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><defs>${pat}</defs><polygon points="${pts.map(p => p.join(',')).join(' ')}" fill="url(#${id})"/><polygon points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${ink}" stroke-opacity=".35" stroke-width="1" stroke-dasharray="2 2" transform="translate(${w * .04} ${h * .05}) scale(.92 .9)"/></svg>`;
+  };
+
   // Код дня для бармена. В прототипе вычисляется из даты; в рабочей версии бармен получит его в боте.
   const dayCode = d => String(((d.getDate() * 7919 + (d.getMonth() + 1) * 104729 + d.getFullYear()) % 9000) + 1000);
-  const KEY = 'manufaktura-bingo';
-  let marks = {};
+  const KEY = 'manufaktura-book';
+  const monthKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+  const MONTHS_IN = ['январе','феврале','марте','апреле','мае','июне','июле','августе','сентябре','октябре','ноябре','декабре'];
+  let book = { items: {}, months: {} };
   const store = {
     load: cb => {
-      if (inTg && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9')) tg.CloudStorage.getItem(KEY, (err, v) => { try { cb(JSON.parse(v || '{}')); } catch { cb({}); } });
-      else { try { cb(JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { cb({}); } }
+      const parse = v => { try { const o = JSON.parse(v || '{}'); return o.items ? o : { items: {}, months: {} }; } catch { return { items: {}, months: {} }; } };
+      if (inTg && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9')) tg.CloudStorage.getItem(KEY, (err, v) => cb(parse(v)));
+      else { let v = null; try { v = localStorage.getItem(KEY); } catch {} cb(parse(v)); }
     },
     save: v => {
       const s = JSON.stringify(v);
@@ -127,54 +163,60 @@
       else { try { localStorage.setItem(KEY, s); } catch {} }
     }
   };
-  const fullCats = () => cats.filter(c => c.items.every(t => marks[t.n]));
-  function renderBingo() {
-    $('#grid').innerHTML = cats.map(c => {
-      const n = c.items.filter(t => marks[t.n]).length, cols = c.items.length <= 4 ? c.items.length : Math.ceil(c.items.length / 2);
-      return `<div class="cat${n === c.items.length ? ' full' : ''}"><div class="cat-h"><b>${esc(c.title)}</b><span>${n === c.items.length ? 'Закрыто!' : `${n} из ${c.items.length}`}</span></div>
-        <div class="cells" style="grid-template-columns:repeat(${cols},1fr)">${c.items.map(t => `<button type="button" class="cell${marks[t.n] ? ' done' : ''}" data-n="${esc(t.n)}" aria-label="${esc(t.n)}${marks[t.n] ? ', отмечено ' + marks[t.n] : ''}">
-          <span class="no">${pad(tinct.indexOf(t) + 1)}</span><span class="dot" style="background:${COLORS[t.n]}"></span>
-          <span class="cn">${esc(t.n)}</span><span class="stamp"><i>${marks[t.n] ? `проб.<br>${esc(marks[t.n])}` : ''}</i></span></button>`).join('')}</div></div>`;
+  const uniq = () => Object.keys(book.items).length;
+  const total = () => Object.values(book.items).reduce((a, x) => a + x.n, 0);
+  const rankOf = n => [...RANKS].reverse().find(r => n >= r.at);
+  const shots = n => `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'рюмка' : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? 'рюмки' : 'рюмок'}`;
+  let justSewn = null;
+  function renderBook() {
+    const u = uniq(), r = rankOf(u), next = RANKS.find(x => x.at > u), mon = book.months[monthKey(now)] || 0;
+    $('#rank').innerHTML = `<p class="lbl">Ваше звание</p><p class="title">${r.t}</p>
+      <p class="next">${next ? `До звания «${next.t.toLowerCase()}» — ${next.at - u} ${next.at - u === 1 ? 'образец' : next.at - u < 5 ? 'образца' : 'образцов'}` : 'Вся книга собрана. Как сам А. Г. Морозов.'}</p>
+      <div class="ladder">${RANKS.slice(1).map(x => `<i class="${u >= x.at ? 'on' : ''}"></i>`).join('')}</div>
+      <div class="stats"><div><b>${u}/${tinct.length}</b><span>образцов</span></div><div><b>${total()}</b><span>рюмок всего</span></div><div><b>${mon}</b><span>в ${MONTHS_IN[now.getMonth()]}</span></div></div>
+      <button class="share" type="button" id="share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13"/></svg>Похвастаться друзьям</button>`;
+    $('#pages').innerHTML = cats.map(c => {
+      const n = c.items.filter(t => book.items[t.n]).length;
+      return `<div class="page${n === c.items.length ? ' full' : ''}"><div class="page-h"><b>${esc(c.title)}</b><span>${n} из ${c.items.length}</span></div>
+        <div class="sw-grid">${c.items.map(t => { const it = book.items[t.n];
+          return `<button type="button" class="sw${it ? ' has' : ''}${justSewn === t.n ? ' new' : ''}" data-n="${esc(t.n)}" aria-label="${esc(t.n)}${it ? `, рюмок: ${it.n}` : ', образца пока нет'}">
+            <span class="slot">${it ? swatchSVG(t.n) : `<em>№${pad(tinct.indexOf(t) + 1)}</em>`}</span>
+            <span class="n">${esc(t.n)}</span>${it ? `<span class="cnt">${shots(it.n)}</span>` : ''}</button>`; }).join('')}</div></div>`;
     }).join('');
-    const n = Object.keys(marks).length, done = fullCats();
-    $('#pFill').style.width = (n / tinct.length * 100) + '%';
-    $('#pText').textContent = `${n} из ${tinct.length}`;
-    const w = $('#wins');
-    if (n === tinct.length) { w.hidden = false; w.innerHTML = `<h3>Вся карточка!</h3><p>Покажите экран бармену: приз и ваше имя на доске Мануфактуры.</p>`; }
-    else if (done.length) { w.hidden = false; w.innerHTML = `<h3>Закрыто: ${done.map(c => c.title.toLowerCase()).join(', ')}</h3><p>Покажите экран бармену, чтобы получить шот.</p>`; }
-    else if (n) {
-      const best = cats.map(c => ({ c, left: c.items.filter(t => !marks[t.n]).length })).sort((x, y) => x.left - y.left)[0];
-      w.hidden = false; w.innerHTML = `<h3>До подарка: ${best.left}</h3><p>Ближе всего группа «${esc(best.c.title)}».</p>`;
-    } else w.hidden = true;
+    justSewn = null;
+    $('#share').onclick = () => {
+      const text = `Я ${r.t.toLowerCase()} в «Мануфактуре»: ${u} из ${tinct.length} образцов, ${shots(total())}. А ты?`;
+      const url = `https://t.me/share/url?url=${encodeURIComponent(B.appLink || B.telegram)}&text=${encodeURIComponent(text)}`;
+      haptic('tap'); if (inTg) tg.openTelegramLink(url); else window.open(url, '_blank', 'noopener');
+    };
   }
-  $('#wedRule').textContent = isWed ? `Сегодня среда: все настойки по ${T.wednesday} ₽ — лучший день, чтобы закрыть группу.` : `По средам все настойки по ${T.wednesday} ₽ вместо ${T.price} — удобный день, чтобы закрыть группу.`;
-  $('#demoCode').textContent = `Демо: код дня для бармена ${dayCode(now)}. В рабочей версии бармен получает код в боте, а награды выбирает владелец бара.`;
-  $('#grid').onclick = e => {
-    const b = e.target.closest('.cell'); if (!b) return; const c = tinct.find(t => t.n === b.dataset.n);
-    if (marks[c.n]) {
-      openSheet(`<h3 id="shTitle">${esc(c.n)}</h3><p class="ds">${esc(c.d)}</p><p class="hint">Отмечено ${esc(marks[c.n])}.</p><button class="btn ghost" type="button" id="close">Понятно</button>`,
-        () => { $('#close').onclick = closeSheet; });
-      return;
-    }
+  $('#wedRule').textContent = isWed ? `Сегодня среда: все настойки по ${T.wednesday} ₽.` : `По средам все настойки по ${T.wednesday} ₽ вместо ${T.price}.`;
+  $('#demoCode').textContent = `Демо: код дня для бармена ${dayCode(now)}. В рабочей версии бармен получает его в боте.`;
+  $('#pages').onclick = e => {
+    const b = e.target.closest('.sw'); if (!b) return; const c = tinct.find(t => t.n === b.dataset.n), it = book.items[c.n];
     haptic('tap');
-    openSheet(`<h3 id="shTitle">${esc(c.n)}</h3><p class="ds">${esc(c.g)} · ${esc(c.d)} · 50 мл · ${isWed ? T.wednesday : T.price} ₽</p>
+    openSheet(`${it ? `<div class="sw-big">${swatchSVG(c.n, 160, 90)}</div>` : ''}<h3 id="shTitle">${esc(c.n)}</h3>
+      <p class="ds">${esc(c.g)} · ${esc(c.d)} · 50 мл · ${isWed ? T.wednesday : T.price} ₽</p>
+      ${it ? `<p class="hint">Образец «${WEAVES[tinct.indexOf(c) % 6]}» вшит ${esc(it.first)}. Выпито: ${shots(it.n)}.</p>` : ''}
       <form id="codeForm" novalidate><div class="code"><input id="code" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="····" aria-label="Код бармена"></div>
       <p class="err" id="codeErr">Код не подошёл. Попросите бармена ввести его ещё раз.</p>
       <p class="hint">Передайте телефон бармену: он введёт код дня, когда нальёт настойку.</p>
-      <button class="btn" type="submit">Отметить</button></form>`, () => {
-      const inp = $('#code'); setTimeout(() => inp.focus(), 350);
+      <button class="btn" type="submit">${it ? 'Ещё рюмка' : 'Вшить образец'}</button></form>`, () => {
+      const inp = $('#code');
       inp.oninput = () => { inp.value = inp.value.replace(/\D/g, '').slice(0, 4); inp.removeAttribute('aria-invalid'); $('#codeErr').classList.remove('on'); };
       $('#codeForm').onsubmit = ev => {
         ev.preventDefault();
         if (inp.value !== dayCode(now)) { inp.setAttribute('aria-invalid', 'true'); $('#codeErr').classList.add('on'); haptic('error'); return; }
-        const before = fullCats().length;
-        marks[c.n] = `${pad(now.getDate())}.${pad(now.getMonth() + 1)}`; store.save(marks);
-        closeSheet(); renderBingo(); haptic('success');
-        if (fullCats().length > before) setTimeout(() => $('#wins').scrollIntoView({ behavior: 'smooth', block: 'center' }), 250);
+        const was = book.items[c.n], before = rankOf(uniq()).t;
+        book.items[c.n] = was ? { ...was, n: was.n + 1 } : { first: `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()}`, n: 1 };
+        const mk = monthKey(now); book.months[mk] = (book.months[mk] || 0) + 1;
+        store.save(book); if (!was) justSewn = c.n;
+        closeSheet(); renderBook(); haptic('success');
+        if (rankOf(uniq()).t !== before) setTimeout(() => { toast(`Новое звание: ${rankOf(uniq()).t.toLowerCase()}!`); scrollTo({ top: 0, behavior: 'smooth' }); }, 300);
       };
     });
   };
-  store.load(v => { marks = v || {}; renderBingo(); });
+  store.load(v => { book = v; renderBook(); });
 
   /* ---------- Бронь ---------- */
   const user = inTg && tg.initDataUnsafe && tg.initDataUnsafe.user;
@@ -269,7 +311,6 @@
     tip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 12.5h3.5l3 2.5h3.5a1.5 1.5 0 0 1 0 3H9.5M7.5 12.5V20M4 20h3.5"/><path d="m14.5 16 4.6-2.2a1.5 1.5 0 0 1 1.4 2.6L13.5 20H7.5"/><circle cx="15" cy="6.5" r="3"/></svg>',
     grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M4 15h16M10 4v16M15 4v16"/></svg>'
   };
-  const toast = msg => { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); };
   const linkAct = (url, icon, label, demo) => `<a class="act" ${url ? `href="${esc(url)}" target="_blank" rel="noopener"` : `href="#" data-demo="${esc(demo)}"`}>${icon}${label}</a>`;
   const acts = withBingo => `<div class="acts">
       ${withBingo ? `<button class="act" type="button" data-go="bingo">${ICON.grid}Бинго</button>` : linkAct(B.review2gis, ICON.pin, 'Отзыв в 2ГИС', 'Ссылку на отзыв в 2ГИС добавим, когда её даст бар')}
@@ -279,6 +320,10 @@
     const d = e.target.closest('[data-demo]'); if (d) { e.preventDefault(); toast('Демо: ' + d.dataset.demo + '.'); return; }
     const g = e.target.closest('.acts [data-go]'); if (g) show(g.dataset.go);
   });
+  $('#history').innerHTML = `<h3>Дом 1873 года</h3>
+    <p>Здание на бывшей Большой Тобольской улице построено в 1873 году как каменная лавка «Мануфактурные товары» купца первой гильдии Андрея Григорьевича Морозова. Его торговый дом «Морозов с сыновьями» держал восемь лавок, а в 1914 году был первым в уезде по обороту.</p>
+    <p>Мануфактурой тогда называли ткани. Отсюда и наше имя, и книга образцов в этом приложении.</p>
+    <p class="src">Источник: <a href="https://www.amic.ru/news/nedvizhimost/bank-uehal-v-barnaule-za-13-mln-prodayut-odnu-iz-krasiveyshih-usadeb-konca-xix-veka" target="_blank" rel="noopener">amic.ru, 2022</a></p>`;
   $('#aboutActs').innerHTML = `<div class="guest"><h3>Были у нас?</h3><p>Оставьте отзыв или поблагодарите команду бара.</p>${acts(false)}</div>`;
   $('#info').innerHTML = `
     <div><dt>Адрес</dt><dd>${esc(B.address)}<span>${esc(B.building)}</span></dd></div>

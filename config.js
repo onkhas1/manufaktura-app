@@ -13,6 +13,7 @@ window.BAR = {
     { days: "Пт–Сб", time: "17:00–05:00" }
   ],
   telegram: "https://t.me/manufactura_bar",
+  appLink: "https://t.me/manufacturabar_bot/app",   // ссылка на мини-приложение (демо-бот)
   instagram: "https://instagram.com/manufacturabar",
   map: "",            // ссылку на 2ГИС уточнить (в закрепе Telegram она есть)
   review2gis: "",     // ссылка «оставить отзыв» в 2ГИС — взять у бара
