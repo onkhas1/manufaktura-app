@@ -252,7 +252,7 @@
     const cols = split ? 4 : 5, rows = Math.ceil(tinct.length / cols);
     let pr = storyPhoto ? 240 : 0, gs = split ? .9 : 1, cs = split ? 1 : 1;
     const gridW = k => (cols * 130 + (cols - 1) * 18) * k, gridHh = k => (rows * 98 + (rows - 1) * 18) * k;
-    const circBlockH = k => split ? circles.length * (170 * k + 58) - 10 : (circles.length ? 300 * k : 0);
+    const circBlockH = k => split ? 0 : (circles.length ? 300 * k : 0);  // в две колонки кружки подстраиваются под высоту сетки
     const bodyH = () => split ? Math.max(gridHh(gs), circBlockH(cs)) + 30 : (showGrid ? gridHh(gs) + 40 : 0) + circBlockH(cs);
     const need = () => lh + 36 + titleH + (storyPhoto ? 2 * pr + 44 + 50 : 0) + (hasName ? 64 : 0) + (storyOpts.rank ? 150 : 0) + bodyH();
     const avail = SAFE_BOTTOM - 150 - SAFE_TOP;
@@ -306,14 +306,15 @@
       const gw = gridW(gs), d = 170 * cs, colGap = 56, total = gw + colGap + d + 140; // справа кружок + подпись сбоку
       const gx = (W - total) / 2, gy = y + 10;
       drawGrid(gx, gy, gs);
-      const cx = gx + gw + colGap + d / 2, blockH = circBlockH(cs), gh = gridHh(gs);
-      let cy = gy + Math.max(0, (gh - blockH) / 2) + d / 2;
-      circles.forEach(c => {
-        drawCircle(cx, cy, d, c, false);
+      // правая колонка ровно по высоте сетки: первый кружок — вровень с верхним рядом, последний — с нижним
+      const gh = gridHh(gs), n = circles.length, dd = Math.min(d, n > 1 ? (gh - (n - 1) * 24) / n : d);
+      const cx = gx + gw + colGap + d / 2, step = n > 1 ? (gh - dd) / (n - 1) : 0;
+      circles.forEach((c, i) => {
+        const cy = n > 1 ? gy + dd / 2 + i * step : gy + gh / 2;
+        drawCircle(cx, cy, dd, c, false);
         ctx.textAlign = 'left'; ctx.fillStyle = cream2; ctx.font = `italic 400 34px ${OS}`; ctx.fillText(c.cap, cx + d / 2 + 18, cy + 12); ctx.textAlign = 'center';
-        cy += d + 58;
       });
-      y += Math.max(gh, blockH) + 30;
+      y += gh + 30;
     } else {
       if (showGrid) { const gw = gridW(gs); drawGrid((W - gw) / 2, y + 10, gs); y += gridHh(gs) + 40; }
       if (circles.length) {
