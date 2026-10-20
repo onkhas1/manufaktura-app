@@ -460,11 +460,39 @@
     else await new Promise(r => setTimeout(r, 600));
     btn.disabled = false; btn.textContent = 'Отправить заявку';
     if (B.webhookUrl && !sent) { haptic('error'); alert('Не получилось отправить. Позвоните: ' + B.phone); return; }
-    $('#okText').textContent = `${payload.name}, ждём вас ${isToday() ? 'сегодня' : iso(d) === iso(days[1]) ? 'завтра' : `${d.getDate()} ${MONTHS[d.getMonth()]}`} в ${payload.time}, гостей: ${guests}. Администратор перезвонит, чтобы подтвердить.`;
-    const ph = $('#okPhone'); ph.href = 'tel:' + B.phoneRaw; ph.textContent = B.phone;
+    const dayTxt = isToday() ? 'сегодня' : iso(d) === iso(days[1]) ? 'завтра' : `${d.getDate()} ${MONTHS[d.getMonth()]}, ${DAYS_SHORT[d.getDay()].toLowerCase()}`;
+    $('#okCard').innerHTML = [['Когда', `${dayTxt}, ${payload.time}`], ['Гостей', guests], ['Имя', payload.name], ['Телефон', payload.phone]]
+      .concat(payload.note ? [['Пожелания', payload.note]] : []).map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+    $('#demoNote').hidden = !!B.webhookUrl;
     $('#form').hidden = true; $('#ok').hidden = false; haptic('success');
   };
+  $('#okCall').onclick = () => openPhone();
   $('#again').onclick = () => { $('#ok').hidden = true; $('#form').hidden = false; $('#form').reset(); if (user && user.first_name) $('#fName').value = user.first_name; selDate = days[0]; calMonth = null; otherChip().textContent = 'Другая дата'; $('#days').querySelectorAll('.chip').forEach((x, i) => x.setAttribute('aria-pressed', i === 0)); setG(2); fill(); };
+
+  /* ---------- Телефон и карты ---------- */
+  // В Telegram на iPhone ссылки tel: часто не срабатывают, поэтому даём и звонок, и копирование.
+  const openExternal = url => { if (inTg) tg.openLink(url); else window.open(url, '_blank', 'noopener'); };
+  function copyText(t) {
+    const done = () => { haptic('success'); toast('Номер скопирован'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
+    function fallback() { const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch { toast('Не получилось скопировать — выделите номер'); } ta.remove(); }
+  }
+  function openPhone() {
+    openSheet(`<h3 id="shTitle">Позвонить в бар</h3><p class="big-num">${esc(B.phone)}</p><p class="hint">Бронь, вопросы, банкеты.</p>
+      <a class="btn" href="tel:${B.phoneRaw}" id="callNow">Позвонить</a><button class="btn ghost" type="button" id="copyNum">Скопировать номер</button>`, () => {
+      $('#copyNum').onclick = () => copyText(B.phone);
+      $('#callNow').onclick = () => haptic('tap');
+    });
+  }
+  function openMaps() {
+    const q = encodeURIComponent(`${B.city ? B.city + ', ' : ''}${B.address}`);
+    const ya = `https://yandex.ru/maps/?text=${q}`, gis = B.map || `https://2gis.ru/search/${q}`;
+    openSheet(`<h3 id="shTitle">${esc(B.address)}</h3><p class="ds">${esc(B.building)}${B.city ? ', ' + esc(B.city) : ''}</p>
+      <button class="btn" type="button" id="toYa">Открыть в Яндекс Картах</button><button class="btn ghost" type="button" id="to2gis">Открыть в 2ГИС</button>`, () => {
+      $('#toYa').onclick = () => { closeSheet(); openExternal(ya); };
+      $('#to2gis').onclick = () => { closeSheet(); openExternal(gis); };
+    });
+  }
 
   /* ---------- О баре ---------- */
   $('#motto').textContent = `${B.motto}. ${B.about}.`;
@@ -485,13 +513,14 @@
   });
   $('#history').innerHTML = `<h3>Дом 1873 года</h3>
     <p>Здание на бывшей Большой Тобольской улице построено в 1873 году как каменная лавка «Мануфактурные товары» купца первой гильдии Андрея Григорьевича Морозова. Его торговый дом «Морозов с сыновьями» держал восемь лавок, а в 1914 году был первым в уезде по обороту.</p>
-    <p>Мануфактурой тогда называли ткани. Отсюда и наше имя, и книга образцов в этом приложении.</p>
-    <p class="src">Источник: <a href="https://www.amic.ru/news/nedvizhimost/bank-uehal-v-barnaule-za-13-mln-prodayut-odnu-iz-krasiveyshih-usadeb-konca-xix-veka" target="_blank" rel="noopener">amic.ru, 2022</a></p>`;
+    <p>Мануфактурой тогда называли ткани. Отсюда и наше имя, и книга образцов в этом приложении.</p>`;
   $('#aboutActs').innerHTML = `<div class="guest"><h3>Были у нас?</h3><p>Оставьте отзыв или поблагодарите команду бара.</p>${acts(false)}</div>`;
   $('#info').innerHTML = `
-    <div><dt>Адрес</dt><dd>${esc(B.address)}<span>${esc(B.building)}</span></dd></div>
-    <a href="tel:${B.phoneRaw}"><dt>Телефон</dt><dd>${esc(B.phone)}</dd></a>
-    <div><dt>Часы</dt><dd>${B.hours.map(h => `${h.days} ${h.time}`).join('<br>')}</dd></div>`;
+    <button type="button" id="addrBtn"><span class="k">Адрес</span><span class="v">${esc(B.address)}<small>${esc(B.building)}</small></span></button>
+    <button type="button" id="phoneBtn"><span class="k">Телефон</span><span class="v">${esc(B.phone)}</span></button>
+    <div><span class="k">Часы</span><span class="v2">${B.hours.map(h => `${h.days} ${h.time}`).join('<br>')}</span></div>`;
+  $('#phoneBtn').onclick = () => { haptic('tap'); openPhone(); };
+  $('#addrBtn').onclick = () => { haptic('tap'); openMaps(); };
   const tl = $('#tgLink'); tl.href = B.telegram;
   if (inTg) tl.onclick = e => { e.preventDefault(); tg.openTelegramLink(B.telegram); };
 })();

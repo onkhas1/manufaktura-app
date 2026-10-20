@@ -221,7 +221,18 @@ textarea.inp{min-height:76px;resize:none}
 .ok{padding-top:8px}
 .ok h3{font:800 30px/1 var(--cond);text-transform:uppercase;color:var(--bord-ink);margin-top:22px}
 .ok p{margin-top:10px}
-.ok .demo{font-size:13px;color:var(--ink-2);border-top:1px solid var(--line);padding-top:12px;margin-top:16px}
+.ok .demo{font-size:13px;color:var(--ink-2);margin-top:12px}
+.ok-card{margin-top:14px;padding:4px 16px;border-radius:14px;background:var(--paper);border:1.5px solid var(--line-2)}
+.ok-card div{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.ok-card div:last-child{border-bottom:0}
+.ok-card dt{font:700 12.5px/1.3 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.ok-card dd{font-weight:600;text-align:right}
+.big-num{font:800 34px/1 var(--cond);letter-spacing:.02em;color:var(--bord-ink);margin:12px 0 4px;user-select:all;-webkit-user-select:all}
+.info button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:baseline;gap:16px;width:100%;padding:14px 0;border-bottom:1px solid var(--line);cursor:pointer;color:var(--ink)}
+.info button:focus-visible{outline:2px solid var(--bord);outline-offset:2px}
+.info button .k{font:700 12.5px/1 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.info button .v{text-align:right;font-weight:500;color:var(--bord-ink);text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:4px}
+.info button .v small{display:block;font-weight:400;font-size:14px;color:var(--ink-2);text-decoration:none}
 
 /* ---------- О баре ---------- */
 .about-top{background:var(--bord);color:var(--on-bord);padding:6px 18px 24px;text-align:center}
@@ -229,7 +240,8 @@ textarea.inp{min-height:76px;resize:none}
 .about-top p{margin-top:12px;color:var(--on-bord-2);font-size:14.5px}
 .info{margin:8px 18px 0}
 .info a,.info div{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
-.info dt{font:700 12.5px/1 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.info dt,.info .k{font:700 12.5px/1 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.info .v2{text-align:right;font-weight:500}
 .info dd{text-align:right;font-weight:500}
 .info dd span{display:block;font-weight:400;color:var(--ink-2);font-size:14px}
 .info a dd{color:var(--bord-ink)}
@@ -292,9 +304,10 @@ textarea.inp{min-height:76px;resize:none}
     </form>
     <div class="ok" id="ok" hidden>
       <h3>Заявка у нас</h3>
-      <p id="okText"></p>
-      <p>Если планы поменяются, позвоните: <a id="okPhone" class="link"></a>.</p>
-      <p class="demo">Демо: заявка никуда не отправлена. <button class="link" type="button" id="again">Заполнить ещё раз</button></p>
+      <dl class="ok-card" id="okCard"></dl>
+      <p>Администратор перезвонит, чтобы подтвердить. Если планы поменяются — <button class="link" type="button" id="okCall">позвоните в бар</button>.</p>
+      <button class="btn ghost" type="button" id="again">Новая бронь</button>
+      <p class="demo" id="demoNote">Демо: заявка никуда не отправлена.</p>
     </div>
   </section>
 
@@ -303,7 +316,7 @@ textarea.inp{min-height:76px;resize:none}
     <div class="about-top"><img src="img/facade.png" alt="Рисунок фасада: дом купца Морозова"><p id="motto"></p></div>
     <div class="history" id="history"></div>
     <div id="aboutActs"></div>
-    <dl class="info" id="info"></dl>
+    <div class="info" id="info"></div>
     <div class="pad"><a class="btn ghost" id="tgLink" target="_blank" rel="noopener">Канал в Telegram</a></div>
   </section>
 </div>
