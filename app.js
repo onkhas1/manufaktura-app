@@ -521,6 +521,11 @@
     <div><span class="k">Часы</span><span class="v2">${B.hours.map(h => `${h.days} ${h.time}`).join('<br>')}</span></div>`;
   $('#phoneBtn').onclick = () => { haptic('tap'); openPhone(); };
   $('#addrBtn').onclick = () => { haptic('tap'); openMaps(); };
+  if (B.author) {
+    const cr = $('#credit');
+    cr.innerHTML = `Приложение сделал ${B.authorLink ? `<a href="${esc(B.authorLink)}" id="authorLink">${esc(B.author)}</a>` : esc(B.author)}`;
+    const al = $('#authorLink'); if (al && inTg) al.onclick = e => { e.preventDefault(); /^https:\/\/t\.me\//.test(B.authorLink) ? tg.openTelegramLink(B.authorLink) : tg.openLink(B.authorLink); };
+  }
   const tl = $('#tgLink'); tl.href = B.telegram;
   if (inTg) tl.onclick = e => { e.preventDefault(); tg.openTelegramLink(B.telegram); };
 })();
